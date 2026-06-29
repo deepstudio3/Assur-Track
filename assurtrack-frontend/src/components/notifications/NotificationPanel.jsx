@@ -1,15 +1,21 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Wallet, RefreshCw, AlertTriangle } from 'lucide-react';
-import { useNotifStore } from '../../store/notifStore';
+import { Wallet, RefreshCw, AlertTriangle, ShoppingCart, BellOff } from 'lucide-react';
+import { useNotifications, useMarkNotificationsRead } from '../../hooks/useNotifications';
 import { fromNow } from '../../utils/formatDate';
 import styles from './NotificationPanel.module.css';
 
-const ICONS = { caisse: Wallet, relance: RefreshCw, default: AlertTriangle };
+const ICONS = {
+  caisse: Wallet,
+  relance: RefreshCw,
+  vente: ShoppingCart,
+  dette: AlertTriangle,
+  default: AlertTriangle,
+};
 
 export default function NotificationPanel({ open, onClose, anchorRef }) {
-  const notifications = useNotifStore((s) => s.notifications);
-  const markAllRead = useNotifStore((s) => s.markAllRead);
+  const { data: notifications = [] } = useNotifications();
+  const markRead = useMarkNotificationsRead();
   const ref = useRef(null);
 
   useEffect(() => {
@@ -42,28 +48,37 @@ export default function NotificationPanel({ open, onClose, anchorRef }) {
         >
           <div className={styles.head}>
             <h3 className={styles.title}>Notifications</h3>
-            <button className={styles.markAll} onClick={markAllRead}>
-              Tout marquer comme lu
-            </button>
+            {notifications.some((n) => !n.lu) && (
+              <button className={styles.markAll} onClick={() => markRead.mutate()}>
+                Tout marquer comme lu
+              </button>
+            )}
           </div>
-          <ul className={styles.list}>
-            {notifications.map((n) => {
-              const Icon = ICONS[n.type] || ICONS.default;
-              return (
-                <li key={n.id} className={styles.item} data-unread={!n.read}>
-                  <span className={styles.icon} data-type={n.type}>
-                    <Icon size={16} />
-                  </span>
-                  <div className={styles.body}>
-                    <p className={styles.itemTitle}>{n.titre}</p>
-                    <p className={styles.detail}>{n.detail}</p>
-                    <span className={styles.time}>{fromNow(n.at)}</span>
-                  </div>
-                  {!n.read && <span className={styles.unreadDot} aria-label="Non lu" />}
-                </li>
-              );
-            })}
-          </ul>
+          {notifications.length === 0 ? (
+            <div className={styles.empty}>
+              <BellOff size={22} />
+              <p>Aucune notification</p>
+            </div>
+          ) : (
+            <ul className={styles.list}>
+              {notifications.map((n) => {
+                const Icon = ICONS[n.type] || ICONS.default;
+                return (
+                  <li key={n.id} className={styles.item} data-unread={!n.lu}>
+                    <span className={styles.icon} data-type={n.type}>
+                      <Icon size={16} />
+                    </span>
+                    <div className={styles.body}>
+                      <p className={styles.itemTitle}>{n.titre}</p>
+                      {n.detail && <p className={styles.detail}>{n.detail}</p>}
+                      <span className={styles.time}>{fromNow(n.created_at)}</span>
+                    </div>
+                    {!n.lu && <span className={styles.unreadDot} aria-label="Non lu" />}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

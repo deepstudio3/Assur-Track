@@ -2,6 +2,7 @@ import { query } from '../../config/database.js';
 import { NotFoundError } from '../../utils/errors.js';
 import { envoyerMessage } from '../whatsapp/whatsapp.service.js';
 import { getTemplate, fill, fmtDate } from '../templates/templates.service.js';
+import { notify } from '../notifications/notifications.service.js';
 
 /** Détermine le type de relance à partir du nombre de jours restants. */
 function typeFromJours(jours) {
@@ -93,6 +94,17 @@ export async function envoyerPourContrat(row, { type } = {}) {
       results.push({ destinataire: dest, statut: 'echec', erreur: err.message });
     }
   }
+
+  // Notification in-app (diffusion entreprise)
+  const okCount = results.filter((r) => r.statut === 'envoye').length;
+  await notify(
+    row.entreprise_id,
+    null,
+    'relance',
+    okCount ? `Relance ${relanceType} envoyée` : `Relance ${relanceType} en échec`,
+    `${row.client_prenom} ${row.client_nom} · ${row.numero_police}`,
+  );
+
   return { type: relanceType, envois: results };
 }
 

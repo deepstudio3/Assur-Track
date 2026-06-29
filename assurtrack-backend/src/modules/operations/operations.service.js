@@ -3,6 +3,7 @@ import { ForbiddenError, NotFoundError, BadRequestError } from '../../utils/erro
 import { envoyerMessage } from '../whatsapp/whatsapp.service.js';
 import { TEMPLATES } from '../whatsapp/templates.js';
 import { getTemplate, fill, fmtMontant } from '../templates/templates.service.js';
+import { notify } from '../notifications/notifications.service.js';
 
 /* ---------- Dettes (operations_caisse) ---------- */
 function shapeDette(row) {
@@ -77,22 +78,29 @@ export async function createDette({ montant, motif }, { user }) {
 
   try {
     const { rows } = await query(
-      `SELECT prenom, nom, telephone_wa FROM users
-       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE AND telephone_wa IS NOT NULL LIMIT 1`,
+      `SELECT id, prenom, nom, telephone_wa FROM users
+       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE LIMIT 1`,
       [user.entreprise_id],
     );
     const patronne = rows[0];
     if (patronne) {
       const me = await query(`SELECT prenom, nom FROM users WHERE id = $1`, [user.id]);
+      const secretaire = `${me.rows[0].prenom} ${me.rows[0].nom}`;
       const heure = new Date(inserted.rows[0].created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-      const tpl = await getTemplate(user.entreprise_id, 'operation');
-      const message = fill(tpl, {
-        secretaire: `${me.rows[0].prenom} ${me.rows[0].nom}`,
-        montant: fmtMontant(value),
-        motif: motif || '—',
-        heure,
-      });
-      await envoyerMessage(patronne.telephone_wa, message, user.entreprise_id);
+      // Notification in-app (toujours)
+      await notify(
+        user.entreprise_id,
+        patronne.id,
+        'caisse',
+        'Nouvelle dette enregistrée',
+        `${secretaire} · ${fmtMontant(value)}${motif ? ` · ${motif}` : ''}`,
+      );
+      // WhatsApp (si numéro renseigné)
+      if (patronne.telephone_wa) {
+        const tpl = await getTemplate(user.entreprise_id, 'operation');
+        const message = fill(tpl, { secretaire, montant: fmtMontant(value), motif: motif || '—', heure });
+        await envoyerMessage(patronne.telephone_wa, message, user.entreprise_id);
+      }
     }
   } catch (err) {
     console.error('[caisse] notification dette échouée :', err.message);
@@ -145,6 +153,22 @@ export async function rembourser({ secretaireId, montant }, user) {
   // Notifications (non bloquantes)
   try {
     const secU = sec.rows[0];
+    // Notifications in-app
+    await notify(
+      user.entreprise_id,
+      secU.id,
+      'caisse',
+      'Remboursement reçu',
+      `${fmtMontant(value)} · reste dû ${fmtMontant(nouveauReste)}`,
+    );
+    await notify(
+      user.entreprise_id,
+      user.id,
+      'caisse',
+      'Remboursement enregistré',
+      `${secU.prenom} ${secU.nom} · ${fmtMontant(value)}`,
+    );
+    // WhatsApp
     if (secU.telephone_wa) {
       await envoyerMessage(secU.telephone_wa, TEMPLATES.remboursement_secretaire(value, nouveauReste), user.entreprise_id);
     }

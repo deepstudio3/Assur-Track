@@ -1,7 +1,8 @@
 import { query, withTransaction } from '../../config/database.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { envoyerMessage } from '../whatsapp/whatsapp.service.js';
-import { TEMPLATES } from '../whatsapp/templates.js';
+import { TEMPLATES, fmtMontant } from '../whatsapp/templates.js';
+import { notify } from '../notifications/notifications.service.js';
 
 function shapeVente(row) {
   return {
@@ -109,8 +110,8 @@ export async function create({ lignes, mode_paiement, client, note }, { user }) 
   // Notification patronne (non bloquante)
   try {
     const { rows } = await query(
-      `SELECT prenom, nom, telephone_wa FROM users
-       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE AND telephone_wa IS NOT NULL LIMIT 1`,
+      `SELECT id, prenom, nom, telephone_wa FROM users
+       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE LIMIT 1`,
       [user.entreprise_id],
     );
     const patronne = rows[0];
@@ -118,11 +119,21 @@ export async function create({ lignes, mode_paiement, client, note }, { user }) 
       const me = await query(`SELECT prenom, nom FROM users WHERE id = $1`, [user.id]);
       const resume = computed.map((l) => `${l.produit_nom} ×${l.quantite}`).join(' · ');
       const heure = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-      const msg =
-        mode_paiement === 'credit'
+      const credit = mode_paiement === 'credit';
+      // Notification in-app
+      await notify(
+        user.entreprise_id,
+        patronne.id,
+        'vente',
+        credit ? 'Vente à crédit enregistrée' : 'Nouvelle vente',
+        `${resume} · ${fmtMontant(total)}${credit && client ? ` · ${client.prenom} ${client.nom}` : ''}`,
+      );
+      if (patronne.telephone_wa) {
+        const msg = credit
           ? TEMPLATES.vente_credit(me.rows[0], total, resume, client, heure)
           : TEMPLATES.vente_comptant(me.rows[0], total, resume, heure);
-      await envoyerMessage(patronne.telephone_wa, msg, user.entreprise_id);
+        await envoyerMessage(patronne.telephone_wa, msg, user.entreprise_id);
+      }
     }
   } catch (err) {
     console.error('[ventes] notification échouée :', err.message);
@@ -168,18 +179,28 @@ export async function payer(venteId, { montant, note }, user) {
   // Notification patronne (non bloquante)
   try {
     const { rows } = await query(
-      `SELECT prenom, nom, telephone_wa FROM users
-       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE AND telephone_wa IS NOT NULL LIMIT 1`,
+      `SELECT id, prenom, nom, telephone_wa FROM users
+       WHERE entreprise_id = $1 AND role = 'patronne' AND actif = TRUE LIMIT 1`,
       [user.entreprise_id],
     );
     if (rows[0]) {
       const me = await query(`SELECT prenom, nom FROM users WHERE id = $1`, [user.id]);
       const heure = new Date().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-      await envoyerMessage(
-        rows[0].telephone_wa,
-        TEMPLATES.dette_payee({ prenom: vente.client_prenom, nom: vente.client_nom }, value, me.rows[0], heure),
+      const clientNom = `${vente.client_prenom || ''} ${vente.client_nom || ''}`.trim() || 'Client';
+      await notify(
         user.entreprise_id,
+        rows[0].id,
+        'dette',
+        'Dette client payée',
+        `${clientNom} · ${fmtMontant(value)}`,
       );
+      if (rows[0].telephone_wa) {
+        await envoyerMessage(
+          rows[0].telephone_wa,
+          TEMPLATES.dette_payee({ prenom: vente.client_prenom, nom: vente.client_nom }, value, me.rows[0], heure),
+          user.entreprise_id,
+        );
+      }
     }
   } catch (err) {
     console.error('[ventes] notification paiement échouée :', err.message);

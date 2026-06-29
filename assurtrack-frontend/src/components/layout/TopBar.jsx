@@ -2,13 +2,14 @@ import { useRef, useState } from 'react';
 import { Bell, Menu } from 'lucide-react';
 import NotificationPanel from '../notifications/NotificationPanel';
 import { useAuthStore } from '../../store/authStore';
-import { useNotifStore } from '../../store/notifStore';
+import { useNotifications } from '../../hooks/useNotifications';
 import { formatDate } from '../../utils/formatDate';
 import styles from './TopBar.module.css';
 
 export default function TopBar({ onMenu }) {
   const user = useAuthStore((s) => s.user);
-  const unread = useNotifStore((s) => s.notifications.filter((n) => !n.read).length);
+  const { data: notifications = [] } = useNotifications();
+  const unread = notifications.filter((n) => !n.lu).length;
   const [notifOpen, setNotifOpen] = useState(false);
   const bellRef = useRef(null);
   const initials = user ? `${user.prenom[0]}${user.nom[0]}` : '··';

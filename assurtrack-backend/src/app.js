@@ -13,6 +13,7 @@ import produitsRoutes from './modules/produits/produits.routes.js';
 import ventesRoutes from './modules/ventes/ventes.routes.js';
 import whatsappRoutes from './modules/whatsapp/whatsapp.routes.js';
 import templatesRoutes from './modules/templates/templates.routes.js';
+import notificationsRoutes from './modules/notifications/notifications.routes.js';
 
 export function createApp() {
   const app = express();
@@ -31,6 +32,7 @@ export function createApp() {
   app.use('/api/ventes', ventesRoutes);
   app.use('/api/whatsapp', whatsappRoutes);
   app.use('/api/templates', templatesRoutes);
+  app.use('/api/notifications', notificationsRoutes);
   app.use('/api/dashboard', dashboardRoutes);
 
   app.use(notFoundHandler);
