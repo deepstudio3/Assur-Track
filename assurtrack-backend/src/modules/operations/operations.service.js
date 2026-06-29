@@ -2,6 +2,7 @@ import { query } from '../../config/database.js';
 import { ForbiddenError, NotFoundError, BadRequestError } from '../../utils/errors.js';
 import { envoyerMessage } from '../whatsapp/whatsapp.service.js';
 import { TEMPLATES } from '../whatsapp/templates.js';
+import { getTemplate, fill, fmtMontant } from '../templates/templates.service.js';
 
 /* ---------- Dettes (operations_caisse) ---------- */
 function shapeDette(row) {
@@ -84,7 +85,14 @@ export async function createDette({ montant, motif }, { user }) {
     if (patronne) {
       const me = await query(`SELECT prenom, nom FROM users WHERE id = $1`, [user.id]);
       const heure = new Date(inserted.rows[0].created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-      await envoyerMessage(patronne.telephone_wa, TEMPLATES.nouvelle_operation(me.rows[0], value, motif, heure), user.entreprise_id);
+      const tpl = await getTemplate(user.entreprise_id, 'operation');
+      const message = fill(tpl, {
+        secretaire: `${me.rows[0].prenom} ${me.rows[0].nom}`,
+        montant: fmtMontant(value),
+        motif: motif || '—',
+        heure,
+      });
+      await envoyerMessage(patronne.telephone_wa, message, user.entreprise_id);
     }
   } catch (err) {
     console.error('[caisse] notification dette échouée :', err.message);

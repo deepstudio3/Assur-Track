@@ -1,7 +1,7 @@
 import { query } from '../../config/database.js';
 import { NotFoundError } from '../../utils/errors.js';
 import { envoyerMessage } from '../whatsapp/whatsapp.service.js';
-import { templateRelance } from '../whatsapp/templates.js';
+import { getTemplate, fill, fmtDate } from '../templates/templates.service.js';
 
 /** Détermine le type de relance à partir du nombre de jours restants. */
 function typeFromJours(jours) {
@@ -61,15 +61,20 @@ async function getContratComplet(contratId, entrepriseId) {
  * Renvoie le détail des envois. Utilisé en manuel et par le cron.
  */
 export async function envoyerPourContrat(row, { type } = {}) {
-  const client = { prenom: row.client_prenom, nom: row.client_nom };
-  const contrat = {
-    numero_police: row.numero_police,
-    type_assurance: row.type_assurance,
-    date_expiration: row.date_expiration,
-    numero_chassis: row.numero_chassis,
-  };
   const relanceType = type || typeFromJours(Number(row.jours_restants));
-  const message = templateRelance(relanceType, client, contrat);
+
+  // Template personnalisable de l'entreprise (sinon défaut), variables remplies.
+  const tpl = await getTemplate(row.entreprise_id, relanceType);
+  let message = fill(tpl, {
+    prenom: row.client_prenom,
+    type: row.type_assurance,
+    police: row.numero_police,
+    date: fmtDate(row.date_expiration),
+  });
+  // Le n° de châssis (assurance auto) est ajouté automatiquement s'il existe.
+  if (row.numero_chassis) {
+    message += `\n\n🚗 Véhicule — N° de châssis : *${row.numero_chassis}*`;
+  }
 
   const destinataires = [
     row.client_tel,

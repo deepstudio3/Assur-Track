@@ -1,31 +1,15 @@
-/** Templates de messages WhatsApp (relances + caisse). */
+/**
+ * Templates WhatsApp NON personnalisables (remboursements caisse + ventes).
+ * Les relances (J-30/J-7/J-0) et la notification de dette ('operation') sont,
+ * elles, personnalisables par l'entreprise — voir src/modules/templates/.
+ */
 
-const fmtDate = (d) =>
+export const fmtDate = (d) =>
   new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 
-const fmtMontant = (n) => `${new Intl.NumberFormat('fr-FR').format(Number(n) || 0)} FCFA`;
-
-/** Ligne d'identification du véhicule (assurance auto) — vide sinon. */
-const ligneChassis = (contrat) =>
-  contrat?.numero_chassis ? `\n🚗 Véhicule — N° de châssis : *${contrat.numero_chassis}*` : '';
+export const fmtMontant = (n) => `${new Intl.NumberFormat('fr-FR').format(Number(n) || 0)} FCFA`;
 
 export const TEMPLATES = {
-  relance_J30: (client, contrat) =>
-    `Bonjour ${client.prenom} 👋\n\nVotre contrat d'assurance *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire dans *30 jours*, le ${fmtDate(contrat.date_expiration)}.${ligneChassis(contrat)}\n\nContactez-nous maintenant pour renouveler votre couverture.\n\n_AssurTrack_`,
-
-  relance_J7: (client, contrat) =>
-    `⚠️ Rappel urgent — Bonjour ${client.prenom}\n\nVotre contrat *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire dans *7 jours*.${ligneChassis(contrat)}\n\nRenouvelez dès aujourd'hui pour éviter toute interruption de couverture.\n\n_AssurTrack_`,
-
-  relance_J0: (client, contrat) =>
-    `🔴 *EXPIRATION AUJOURD'HUI*\n\nBonjour ${client.prenom}, votre contrat *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire ce jour.${ligneChassis(contrat)}\n\nContactez immédiatement votre agence.\n\n_AssurTrack_`,
-
-  nouvelle_operation: (secretaire, montant, motif, heure) =>
-    `💰 *Nouvelle dette enregistrée*\n\n` +
-    `${secretaire.prenom} ${secretaire.nom} déclare que vous avez pris *${fmtMontant(montant)}* dans sa caisse.\n` +
-    `Motif : ${motif || '—'}\n` +
-    `Heure : ${heure}\n\n` +
-    `Connectez-vous à AssurTrack pour suivre et rembourser.\n_AssurTrack_`,
-
   // Remboursement d'une tranche — message à la secrétaire
   remboursement_secretaire: (montant, reste) =>
     `✅ *Remboursement reçu*\n\n` +
@@ -63,10 +47,3 @@ export const TEMPLATES = {
     `Enregistré par : ${payePar.prenom} ${payePar.nom}\n` +
     `Heure : ${heure}\n\n_AssurTrack_`,
 };
-
-/** Associe un type de relance (J-30/J-7/J-0) au bon template. */
-export function templateRelance(type, client, contrat) {
-  if (type === 'J-30') return TEMPLATES.relance_J30(client, contrat);
-  if (type === 'J-7') return TEMPLATES.relance_J7(client, contrat);
-  return TEMPLATES.relance_J0(client, contrat);
-}

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
   Phone,
@@ -25,8 +25,15 @@ import {
   useWaRestart,
   useWaDisconnect,
 } from '../../hooks/useWhatsApp';
-import { WA_TEMPLATES } from '../../mock/data';
+import { useTemplates, useSaveTemplates } from '../../hooks/useTemplates';
 import styles from './Settings.module.css';
+
+const TEMPLATE_HINTS = {
+  'J-30': 'Variables : {prenom}, {type}, {police}, {date}',
+  'J-7': 'Variables : {prenom}, {type}, {police}, {date}',
+  'J-0': 'Variables : {prenom}, {type}, {police}, {date}',
+  operation: 'Variables : {secretaire}, {montant}, {motif}, {heure}',
+};
 
 const TEMPLATE_LABELS = {
   'J-30': 'Rappel J-30',
@@ -181,8 +188,14 @@ function WhatsAppConnection() {
 }
 
 export default function Settings() {
-  const [templates, setTemplates] = useState(WA_TEMPLATES);
+  const { data: tplData, isLoading: tplLoading } = useTemplates();
+  const saveTpl = useSaveTemplates();
+  const [templates, setTemplates] = useState(null);
   const [users, setUsers] = useState(INITIAL_USERS);
+
+  useEffect(() => {
+    if (tplData) setTemplates(tplData);
+  }, [tplData]);
 
   const toggleUser = (id) =>
     setUsers((list) => list.map((u) => (u.id === id ? { ...u, actif: !u.actif } : u)));
@@ -216,28 +229,38 @@ export default function Settings() {
             eyebrow="Messages automatiques"
             title="Templates WhatsApp"
             action={
-              <Button size="sm" icon={Save} onClick={() => toast.success('Templates enregistrés')}>
+              <Button
+                size="sm"
+                icon={Save}
+                loading={saveTpl.isPending}
+                disabled={!templates}
+                onClick={() => templates && saveTpl.mutate(templates)}
+              >
                 Enregistrer
               </Button>
             }
           />
-          <div className={styles.templates}>
-            {Object.entries(templates).map(([key, value]) => (
-              <Textarea
-                key={key}
-                label={
-                  <>
-                    <MessageSquareText size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
-                    {TEMPLATE_LABELS[key]}
-                  </>
-                }
-                value={value}
-                onChange={(e) => setTemplates((t) => ({ ...t, [key]: e.target.value }))}
-                rows={key === 'operation' ? 6 : 4}
-                hint="Variables disponibles : {prenom}, {type}, {police}, {date}"
-              />
-            ))}
-          </div>
+          {tplLoading || !templates ? (
+            <Loader center />
+          ) : (
+            <div className={styles.templates}>
+              {Object.entries(templates).map(([key, value]) => (
+                <Textarea
+                  key={key}
+                  label={
+                    <>
+                      <MessageSquareText size={13} style={{ verticalAlign: '-2px', marginRight: 6 }} />
+                      {TEMPLATE_LABELS[key]}
+                    </>
+                  }
+                  value={value}
+                  onChange={(e) => setTemplates((t) => ({ ...t, [key]: e.target.value }))}
+                  rows={key === 'operation' ? 6 : 4}
+                  hint={TEMPLATE_HINTS[key]}
+                />
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* --- Utilisateurs --- */}
