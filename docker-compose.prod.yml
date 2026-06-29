@@ -1,0 +1,193 @@
+services:
+  # ===================================================================
+  #  Caddy — point d'entrée public unique (HTTPS automatique)
+  # ===================================================================
+  caddy:
+    image: caddy:2-alpine
+    container_name: assurtrack-caddy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - assurtrack-net
+
+  # ===================================================================
+  #  AssurTrack — base, API, frontend
+  # ===================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: assurtrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # Pas de port exposé : la base n'est joignable que sur le réseau interne.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - assurtrack-net
+
+  backend:
+    build: ./assurtrack-backend
+    container_name: assurtrack-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-12h}
+      CORS_ORIGIN: ${PUBLIC_URL}
+      WHATSFLOW_URL: http://whatsflow-api:8000
+      WHATSFLOW_API_KEY: ${WHATSFLOW_API_KEY:-}
+      WHATSFLOW_CLIENT_ID: ${WHATSFLOW_CLIENT_ID:-}
+      UPLOAD_DIR: /app/uploads
+      RELANCES_CRON: ${RELANCES_CRON:-0 7 * * *}
+      RELANCES_TZ: ${RELANCES_TZ:-Africa/Douala}
+      # Compte patronne initial (créé une seule fois, sans données de démo)
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      ADMIN_NOM: ${ADMIN_NOM:-Admin}
+      ADMIN_PRENOM: ${ADMIN_PRENOM:-Patronne}
+      ADMIN_TEL_WA: ${ADMIN_TEL_WA:-}
+      ENTREPRISE_NOM: ${ENTREPRISE_NOM:-Mon Entreprise}
+      ENTREPRISE_TEL_GERANT: ${ENTREPRISE_TEL_GERANT:-}
+      ENTREPRISE_TEL_RESPONSABLE: ${ENTREPRISE_TEL_RESPONSABLE:-}
+    # Applique les migrations (SANS données de démo), crée le compte patronne
+    # initial (idempotent), puis démarre l'API.
+    command: sh -c "node src/scripts/migrate.js && node src/scripts/bootstrap.js && node src/server.js"
+    # Pas de port exposé : seul Caddy parle au backend (via /api).
+    volumes:
+      - assurtrack_uploads:/app/uploads
+    networks:
+      - assurtrack-net
+
+  frontend:
+    build:
+      context: ./assurtrack-frontend
+      dockerfile: Dockerfile
+      args:
+        # URL de l'API figée dans le bundle au moment du build.
+        VITE_API_URL: ${PUBLIC_URL}/api
+    container_name: assurtrack-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    # Pas de port exposé : Caddy sert le frontend sur le port 80 interne.
+    networks:
+      - assurtrack-net
+
+  # ===================================================================
+  #  WhatsFlow — middleware WhatsApp (interne uniquement)
+  # ===================================================================
+  whatsflow-postgres:
+    image: postgres:15-alpine
+    container_name: whatsflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whatsflow
+      POSTGRES_PASSWORD: ${WHATSFLOW_DB_PASSWORD}
+      POSTGRES_DB: whatsflow
+    volumes:
+      - whatsflow_pgdata:/var/lib/postgresql/data
+      - ./whatsflow/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatsflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - assurtrack-net
+
+  whatsflow-redis:
+    image: redis:7-alpine
+    container_name: whatsflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - whatsflow_redis:/data
+    networks:
+      - assurtrack-net
+
+  whatsflow-api:
+    build: ./whatsflow
+    container_name: whatsflow-api
+    restart: unless-stopped
+    depends_on:
+      whatsflow-postgres:
+        condition: service_healthy
+      whatsflow-redis:
+        condition: service_started
+    environment:
+      ENVIRONMENT: production
+      DATABASE_URL: postgresql+asyncpg://whatsflow:${WHATSFLOW_DB_PASSWORD}@whatsflow-postgres:5432/whatsflow
+      POSTGRES_USER: whatsflow
+      POSTGRES_PASSWORD: ${WHATSFLOW_DB_PASSWORD}
+      POSTGRES_DB: whatsflow
+      POSTGRES_HOST: whatsflow-postgres
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://whatsflow-redis:6379
+      REDIS_HOST: whatsflow-redis
+      JWT_SECRET: ${WHATSFLOW_JWT_SECRET}
+      WHATSAPP_BRIDGE_HOST: whatsapp-engine
+      OPENWA_PORT: 3010
+      WHATSAPP_BASE_PORT: 3010
+      MAX_SESSIONS_PER_CLIENT: 5
+    # Exposé UNIQUEMENT sur la boucle locale du serveur (127.0.0.1).
+    # Sert à créer le client WhatsFlow une seule fois en SSH ; jamais public.
+    ports:
+      - "127.0.0.1:8011:8000"
+    networks:
+      - assurtrack-net
+
+  whatsapp-engine:
+    build:
+      context: ./whatsflow/whatsapp-engine
+      dockerfile: Dockerfile
+    image: whatsapp-baileys-engine:latest
+    container_name: whatsapp-engine
+    restart: unless-stopped
+    depends_on:
+      whatsflow-postgres:
+        condition: service_healthy
+      whatsflow-redis:
+        condition: service_started
+    environment:
+      PORT: 3010
+      NODE_ENV: production
+      DATABASE_URL: postgresql://whatsflow:${WHATSFLOW_DB_PASSWORD}@whatsflow-postgres:5432/whatsflow
+      REDIS_URL: redis://whatsflow-redis:6379
+      WHATSAPP_BRIDGE_HOST: whatsflow-api
+      FASTAPI_URL: http://whatsflow-api:8000
+      WHATSFLOW_INTERNAL_TOKEN: ${WHATSFLOW_INTERNAL_TOKEN}
+    networks:
+      - assurtrack-net
+
+networks:
+  assurtrack-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  whatsflow_pgdata:
+  whatsflow_redis:
+  assurtrack_uploads:
+  caddy_data:
+  caddy_config:

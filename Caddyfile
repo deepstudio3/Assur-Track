@@ -1,0 +1,27 @@
+# Caddy obtient et renouvelle automatiquement les certificats HTTPS
+# (Let's Encrypt) dès que le DNS de kamillendi.com pointe vers ce serveur
+# et que les ports 80 + 443 sont ouverts.
+
+{
+	# Adresse e-mail pour les certificats Let's Encrypt
+	email kountchouryan@gmail.com
+}
+
+kamillendi.com, www.kamillendi.com {
+	encode gzip zstd
+
+	# --- API AssurTrack ---
+	handle /api/* {
+		reverse_proxy backend:4000
+	}
+
+	# --- Health check ---
+	handle /health {
+		reverse_proxy backend:4000
+	}
+
+	# --- Frontend (React SPA servi par Nginx) ---
+	handle {
+		reverse_proxy frontend:80
+	}
+}
