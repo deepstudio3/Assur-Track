@@ -102,7 +102,7 @@ export default function RelanceList() {
             title="Modifier"
             onClick={(e) => {
               e.stopPropagation();
-              navigate('/relance/nouveau');
+              navigate('/assurance/nouveau');
             }}
           >
             <Pencil size={16} />
@@ -121,7 +121,7 @@ export default function RelanceList() {
           <Button variant="outline" icon={CalendarDays} onClick={() => navigate('/relance/calendrier')}>
             Calendrier
           </Button>
-          <Button icon={Plus} onClick={() => navigate('/relance/nouveau')}>
+          <Button icon={Plus} onClick={() => navigate('/assurance/nouveau')}>
             Nouveau contrat
           </Button>
         </>
@@ -157,13 +157,13 @@ export default function RelanceList() {
         <Table
           columns={columns}
           data={rows}
-          onRowClick={() => navigate('/relance/nouveau')}
+          onRowClick={() => navigate('/assurance/nouveau')}
           empty={
             <EmptyState
               title="Aucun contrat trouvé"
               description="Modifiez vos filtres ou ajoutez un premier contrat pour commencer à suivre ses échéances."
               action={
-                <Button icon={Plus} onClick={() => navigate('/relance/nouveau')}>
+                <Button icon={Plus} onClick={() => navigate('/assurance/nouveau')}>
                   Nouveau contrat
                 </Button>
               }

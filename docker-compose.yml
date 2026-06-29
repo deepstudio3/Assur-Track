@@ -1,4 +1,7 @@
 services:
+  # ===================================================================
+  #  AssurTrack — base, API, frontend
+  # ===================================================================
   postgres:
     image: postgres:16-alpine
     container_name: assurtrack-db
@@ -32,10 +35,13 @@ services:
       DATABASE_URL: postgresql://assurtrack_user:assurtrack_secret_2026@postgres:5432/assurtrack
       JWT_SECRET: assurtrack-jwt-secret-change-in-prod-2026
       CORS_ORIGIN: http://localhost:5173
-      WHATSFLOW_URL: ${WHATSFLOW_URL:-}
-      WHATSFLOW_TOKEN: whatsflow-internal-2026
-      WHATSFLOW_CLIENT: 852ed5d0-25c6-4f0b-b942-6023a55c5ca4
-    # Applique migrations + seed (idempotent) avant de démarrer l'API.
+      # --- WhatsApp (WhatsFlow) ---
+      # L'URL pointe vers l'API WhatsFlow sur le réseau interne.
+      # API_KEY / CLIENT_ID proviennent du .env racine (créés une fois,
+      # cf. whatsflow/create_client.ps1). Vides = WhatsApp désactivé.
+      WHATSFLOW_URL: http://whatsflow-api:8000
+      WHATSFLOW_API_KEY: ${WHATSFLOW_API_KEY:-}
+      WHATSFLOW_CLIENT_ID: ${WHATSFLOW_CLIENT_ID:-}
     command: sh -c "node src/scripts/migrate.js --seed && node src/server.js"
     ports:
       - "4000:4000"
@@ -59,9 +65,103 @@ services:
     networks:
       - assurtrack-net
 
+  # ===================================================================
+  #  WhatsFlow — middleware WhatsApp (API FastAPI + base + Redis + moteur)
+  # ===================================================================
+  whatsflow-postgres:
+    image: postgres:15-alpine
+    container_name: whatsflow-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: whatsflow
+      POSTGRES_PASSWORD: whatsflow_secure_password
+      POSTGRES_DB: whatsflow
+    volumes:
+      - whatsflow_pgdata:/var/lib/postgresql/data
+      # Crée la table d'auth-state Baileys au premier démarrage (volume vierge)
+      - ./whatsflow/init-db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatsflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - assurtrack-net
+
+  whatsflow-redis:
+    image: redis:7-alpine
+    container_name: whatsflow-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - whatsflow_redis:/data
+    networks:
+      - assurtrack-net
+
+  whatsflow-api:
+    build: ./whatsflow
+    container_name: whatsflow-api
+    restart: unless-stopped
+    depends_on:
+      whatsflow-postgres:
+        condition: service_healthy
+      whatsflow-redis:
+        condition: service_started
+    environment:
+      ENVIRONMENT: development
+      DATABASE_URL: postgresql+asyncpg://whatsflow:whatsflow_secure_password@whatsflow-postgres:5432/whatsflow
+      POSTGRES_USER: whatsflow
+      POSTGRES_PASSWORD: whatsflow_secure_password
+      POSTGRES_DB: whatsflow
+      POSTGRES_HOST: whatsflow-postgres
+      POSTGRES_PORT: 5432
+      REDIS_URL: redis://whatsflow-redis:6379
+      REDIS_HOST: whatsflow-redis
+      JWT_SECRET: whatsflow-jwt-secret-change-in-prod-2026
+      # Le moteur Baileys est joint en dur sur ce nom d'hôte:port
+      WHATSAPP_BRIDGE_HOST: whatsapp-engine
+      OPENWA_PORT: 3010
+      WHATSAPP_BASE_PORT: 3010
+      MAX_SESSIONS_PER_CLIENT: 5
+    ports:
+      # 8001 est déjà pris par la stack WhatsFlow autonome (Swift AI) — on
+      # expose la nôtre sur 8011. AssurTrack la joint de toute façon via le
+      # réseau interne (http://whatsflow-api:8000).
+      - "8011:8000"
+    networks:
+      - assurtrack-net
+
+  whatsapp-engine:
+    build:
+      context: ./whatsflow/whatsapp-engine
+      dockerfile: Dockerfile
+    image: whatsapp-baileys-engine:latest
+    # Le nom de service DOIT rester "whatsapp-engine" : l'API WhatsFlow
+    # l'appelle en dur sur http://whatsapp-engine:3010.
+    container_name: whatsapp-engine
+    restart: unless-stopped
+    depends_on:
+      whatsflow-postgres:
+        condition: service_healthy
+      whatsflow-redis:
+        condition: service_started
+    environment:
+      PORT: 3010
+      NODE_ENV: production
+      DATABASE_URL: postgresql://whatsflow:whatsflow_secure_password@whatsflow-postgres:5432/whatsflow
+      REDIS_URL: redis://whatsflow-redis:6379
+      # Hôte de l'API FastAPI à notifier (qr_ready, connected, messages entrants)
+      WHATSAPP_BRIDGE_HOST: whatsflow-api
+      FASTAPI_URL: http://whatsflow-api:8000
+      WHATSFLOW_INTERNAL_TOKEN: whatsflow-internal-2026
+    networks:
+      - assurtrack-net
+
 networks:
   assurtrack-net:
     driver: bridge
 
 volumes:
   postgres_data:
+  whatsflow_pgdata:
+  whatsflow_redis:

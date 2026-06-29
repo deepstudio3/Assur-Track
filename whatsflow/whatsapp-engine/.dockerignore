@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.env
+.env.local
+.git
+.gitignore
+README.md
+*.md
+.DS_Store
+auth/*
+logs/*
+*.log
+.vscode
+.idea
+Dockerfile.real
+Dockerfile.simple.bak
+package.simple.json

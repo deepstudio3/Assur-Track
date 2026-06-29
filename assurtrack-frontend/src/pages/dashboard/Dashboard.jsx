@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileCheck2, Send, AlarmClock, Wallet, ArrowRight } from 'lucide-react';
+import { FileCheck2, Send, AlarmClock, Wallet, ArrowRight, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   ResponsiveContainer,
   AreaChart,
@@ -24,7 +24,7 @@ import { allocateCaisse } from '../../utils/caisse';
 import { resumeProduits } from '../../mock/ventes';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { daysUntil, jLabel, formatDateTime } from '../../utils/formatDate';
-import { useDashboardStats, useVentesStats } from '../../hooks/useDashboard';
+import { useDashboardStats, useVentesStats, useAssuranceStats } from '../../hooks/useDashboard';
 import { useContrats } from '../../hooks/useContrats';
 import { useCaisse } from '../../hooks/useCaisse';
 import { useVentes } from '../../hooks/useVentes';
@@ -37,6 +37,7 @@ export default function Dashboard() {
 
   const statsQ = useDashboardStats();
   const ventesStatsQ = useVentesStats();
+  const assuranceStatsQ = useAssuranceStats();
   const contratsQ = useContrats({ limit: 100 });
   const caisseQ = useCaisse();
   const ventesQ = useVentes();
@@ -46,6 +47,8 @@ export default function Dashboard() {
   const ventes = ventesQ.data || [];
   const stats = statsQ.data;
   const vstats = ventesStatsQ.data;
+  const fin = assuranceStatsQ.data;
+  const finVar = fin?.variation_mois ?? 0;
 
   const serie = useMemo(
     () => (stats?.relances_serie || []).map((d) => ({ ...d, label: d.date.slice(8) })),
@@ -103,6 +106,43 @@ export default function Dashboard() {
           hint={patronne ? 'à mes secrétaires' : 'la patronne vous doit'}
         />
       </section>
+
+      {/* Revenus de l'assurance — ce mois vs mois précédents */}
+      <Card className={styles.revCard}>
+        <CardHeader
+          eyebrow="Module assurance"
+          title="Revenus de l'assurance"
+          action={
+            <Button variant="ghost" size="sm" iconRight={ArrowRight} onClick={() => navigate('/assurance')}>
+              Voir l'assurance
+            </Button>
+          }
+        />
+        <div className={styles.revBody}>
+          <div className={styles.revLead}>
+            <span className={styles.revItemLabel}>Ce mois</span>
+            <div className={styles.revValueRow}>
+              <span className={`${styles.revValue} tabular`}>{formatCurrency(fin?.ca_mois ?? 0)}</span>
+              <span className={styles.revTrend} data-dir={finVar >= 0 ? 'up' : 'down'}>
+                {finVar >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                {finVar >= 0 ? '+' : ''}
+                {finVar}%
+              </span>
+            </div>
+            <span className={styles.revSub}>vs mois passé · {fin?.nb_mois ?? 0} nouveau{(fin?.nb_mois ?? 0) > 1 ? 'x' : ''} contrat{(fin?.nb_mois ?? 0) > 1 ? 's' : ''}</span>
+          </div>
+          <div className={styles.revCompare}>
+            <div className={styles.revItem}>
+              <span className={styles.revItemLabel}>Mois passé</span>
+              <span className={`${styles.revItemVal} tabular`}>{formatCurrency(fin?.ca_mois_prec ?? 0)}</span>
+            </div>
+            <div className={styles.revItem}>
+              <span className={styles.revItemLabel}>Il y a 2 mois</span>
+              <span className={`${styles.revItemVal} tabular`}>{formatCurrency(fin?.ca_mois_prec2 ?? 0)}</span>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* SIGNATURE — Horizon des échéances */}
       <Card className={styles.horizon}>

@@ -1,32 +1,20 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import { ArrowLeft, Save, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Save, Coins, BellRing } from 'lucide-react';
 import PageWrapper from '../../components/layout/PageWrapper';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { Input, Select } from '../../components/ui/Input';
-import { WA_TEMPLATES, fillTemplate } from '../../mock/data';
 import { useCreateContrat } from '../../hooks/useContrats';
 import { formatDate } from '../../utils/formatDate';
 import { formatCurrency } from '../../utils/formatCurrency';
-import styles from './Relance.module.css';
+import rel from '../relance/Relance.module.css';
+import styles from './Assurance.module.css';
 
 const TYPES = ['Automobile', 'Habitation', 'Santé', 'Voyage', 'Responsabilité civile', 'Vie'];
 
-/** Rendu léger du formatage WhatsApp (*gras*) dans la bulle d'aperçu. */
-function waText(str) {
-  return str.split(/(\*[^*]+\*)/g).map((part, i) =>
-    part.startsWith('*') && part.endsWith('*') ? (
-      <strong key={i}>{part.slice(1, -1)}</strong>
-    ) : (
-      <span key={i}>{part}</span>
-    ),
-  );
-}
-
-export default function RelanceForm() {
+export default function ContratForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     nom: '',
@@ -38,21 +26,12 @@ export default function RelanceForm() {
     date_souscription: '',
     date_expiration: '',
     montant_prime: '',
+    numero_chassis: '',
   });
+  const isAuto = form.type_assurance === 'Automobile';
   const [confirm, setConfirm] = useState(false);
   const createContrat = useCreateContrat();
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const preview = useMemo(
-    () =>
-      fillTemplate(WA_TEMPLATES['J-30'], {
-        prenom: form.prenom || 'Étienne',
-        type: form.type_assurance,
-        police: form.numero_police || 'POL-0000',
-        date: form.date_expiration ? formatDate(form.date_expiration) : '—',
-      }),
-    [form],
-  );
 
   const onSave = async () => {
     try {
@@ -68,25 +47,28 @@ export default function RelanceForm() {
         date_souscription: form.date_souscription,
         date_expiration: form.date_expiration,
         montant_prime: form.montant_prime ? Number(form.montant_prime) : null,
+        numero_chassis: isAuto && form.numero_chassis ? form.numero_chassis.trim() : null,
       });
       setConfirm(false);
-      navigate('/relance');
+      navigate('/assurance');
     } catch {
       /* toast géré par le hook */
     }
   };
 
+  const montant = form.montant_prime ? formatCurrency(form.montant_prime, { suffix: '' }) : '—';
+
   return (
     <PageWrapper
-      eyebrow="Module relance"
+      eyebrow="Module assurance"
       title="Nouveau contrat"
       actions={
-        <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate('/relance')}>
+        <Button variant="ghost" icon={ArrowLeft} onClick={() => navigate('/assurance')}>
           Retour
         </Button>
       }
     >
-      <div className={styles.formGrid}>
+      <div className={rel.formGrid}>
         <Card>
           <form
             onSubmit={(e) => {
@@ -94,9 +76,9 @@ export default function RelanceForm() {
               setConfirm(true);
             }}
           >
-            <div className={styles.formCols}>
-              <div className={styles.fieldset}>
-                <p className={styles.legend}>Informations client</p>
+            <div className={rel.formCols}>
+              <div className={rel.fieldset}>
+                <p className={rel.legend}>Informations client</p>
                 <Input label="Prénom" value={form.prenom} onChange={set('prenom')} placeholder="Étienne" required />
                 <Input label="Nom" value={form.nom} onChange={set('nom')} placeholder="Mballa" required />
                 <Input
@@ -116,8 +98,8 @@ export default function RelanceForm() {
                 />
               </div>
 
-              <div className={styles.fieldset}>
-                <p className={styles.legend}>Informations contrat</p>
+              <div className={rel.fieldset}>
+                <p className={rel.legend}>Informations contrat</p>
                 <Input
                   label="N° de police"
                   value={form.numero_police}
@@ -132,21 +114,31 @@ export default function RelanceForm() {
                     </option>
                   ))}
                 </Select>
+                {isAuto && (
+                  <Input
+                    label="Numéro de châssis"
+                    value={form.numero_chassis}
+                    onChange={set('numero_chassis')}
+                    placeholder="VF1 XXXXX XXXXXXX"
+                    hint="Identifie le véhicule — rappelé au client dans la relance WhatsApp"
+                  />
+                )}
                 <Input label="Date de souscription" type="date" value={form.date_souscription} onChange={set('date_souscription')} required />
                 <Input label="Date d'expiration" type="date" value={form.date_expiration} onChange={set('date_expiration')} required />
                 <Input
-                  label="Montant de la prime"
+                  label="Montant de l'assurance"
                   type="number"
                   value={form.montant_prime}
                   onChange={set('montant_prime')}
                   placeholder="0"
                   suffix="FCFA"
+                  hint="Montant payé par le client — alimente le chiffre d'affaires"
                 />
               </div>
             </div>
 
-            <div className={styles.formActions}>
-              <Button variant="outline" type="button" onClick={() => navigate('/relance')}>
+            <div className={rel.formActions}>
+              <Button variant="outline" type="button" onClick={() => navigate('/assurance')}>
                 Annuler
               </Button>
               <Button type="submit" icon={Save}>
@@ -156,30 +148,42 @@ export default function RelanceForm() {
           </form>
         </Card>
 
-        {/* Aperçu WhatsApp en temps réel */}
-        <div className={styles.preview}>
-          <div className={styles.phone}>
-            <div className={styles.phoneBar}>
-              <span className={styles.phoneAvatar}>
-                {(form.prenom?.[0] || 'É').toUpperCase()}
-              </span>
-              <div>
-                <div className={styles.phoneName}>
-                  {form.prenom || 'Étienne'} {form.nom || 'Mballa'}
-                </div>
-                <div className={styles.phoneStatus}>en ligne</div>
-              </div>
-            </div>
-            <div className={styles.phoneBody}>
-              <div className={styles.bubble}>
-                {waText(preview)}
-                <span className={styles.bubbleTime}>08:00 ✓✓</span>
-              </div>
+        {/* Récap financier */}
+        <div className={styles.recap}>
+          <div>
+            <span className={styles.recapLabel}>Montant de l'assurance</span>
+            <div className={styles.recapAmount}>
+              {montant}
+              <span>FCFA</span>
             </div>
           </div>
-          <p className={styles.previewHint}>
-            <MessageCircle size={13} style={{ display: 'inline', verticalAlign: '-2px' }} /> Aperçu du
-            rappel J-30 envoyé automatiquement
+          <div className={styles.recapRows}>
+            <div className={styles.recapRow}>
+              <span>Client</span>
+              <span>{form.prenom || form.nom ? `${form.prenom} ${form.nom}`.trim() : '—'}</span>
+            </div>
+            <div className={styles.recapRow}>
+              <span>Type</span>
+              <span>{form.type_assurance}</span>
+            </div>
+            {isAuto && (
+              <div className={styles.recapRow}>
+                <span>N° de châssis</span>
+                <span>{form.numero_chassis || '—'}</span>
+              </div>
+            )}
+            <div className={styles.recapRow}>
+              <span>Souscription</span>
+              <span>{form.date_souscription ? formatDate(form.date_souscription) : '—'}</span>
+            </div>
+            <div className={styles.recapRow}>
+              <span>Expiration</span>
+              <span>{form.date_expiration ? formatDate(form.date_expiration) : '—'}</span>
+            </div>
+          </div>
+          <p className={styles.recapNote}>
+            <BellRing size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+            Relances automatiques J-30, J-7 et J-0 programmées sur WhatsApp à l'enregistrement.
           </p>
         </div>
       </div>
@@ -201,15 +205,15 @@ export default function RelanceForm() {
         }
       >
         <p>
-          Le contrat <strong>{form.numero_police || 'POL-0000'}</strong> ({form.type_assurance}) sera
-          créé pour <strong>{form.prenom} {form.nom}</strong>.
+          Le contrat <strong>{form.numero_police || 'POL-0000'}</strong> ({form.type_assurance}) sera créé
+          pour <strong>{form.prenom} {form.nom}</strong>.
         </p>
-        <ul className={styles.summary} style={{ marginTop: 12, lineHeight: 1.9 }}>
-          <li>Expiration : <strong>{form.date_expiration ? formatDate(form.date_expiration) : '—'}</strong></li>
+        <ul className={rel.summary} style={{ marginTop: 12, lineHeight: 1.9 }}>
           <li>
-            Prime :{' '}
+            <Coins size={13} style={{ display: 'inline', verticalAlign: '-2px' }} /> Montant de l'assurance :{' '}
             <strong>{form.montant_prime ? formatCurrency(form.montant_prime) : '—'}</strong>
           </li>
+          <li>Expiration : <strong>{form.date_expiration ? formatDate(form.date_expiration) : '—'}</strong></li>
           <li>Relances automatiques : J-30, J-7, J-0 sur WhatsApp</li>
         </ul>
       </Modal>

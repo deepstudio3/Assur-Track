@@ -23,9 +23,9 @@ export const env = {
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
 
   whatsflow: {
-    url: process.env.WHATSFLOW_URL || '', // vide = envois désactivés
-    token: process.env.WHATSFLOW_TOKEN || '',
-    client: process.env.WHATSFLOW_CLIENT || '',
+    url: process.env.WHATSFLOW_URL || '', // vide = WhatsApp désactivé
+    apiKey: process.env.WHATSFLOW_API_KEY || '', // clé du client WhatsFlow
+    clientId: process.env.WHATSFLOW_CLIENT_ID || '', // id du client WhatsFlow
   },
 
   relances: {

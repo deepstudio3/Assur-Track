@@ -18,6 +18,7 @@ function shape(row) {
     date_souscription: row.date_souscription,
     date_expiration: row.date_expiration,
     montant_prime: row.montant_prime,
+    numero_chassis: row.numero_chassis,
     statut: row.statut,
     jours_restants: row.jours_restants,
     client: {
@@ -78,6 +79,7 @@ export async function create(payload, { userId, entrepriseId }) {
     date_souscription,
     date_expiration,
     montant_prime,
+    numero_chassis,
   } = payload;
 
   if (!numero_police || !type_assurance || !date_souscription || !date_expiration) {
@@ -87,7 +89,10 @@ export async function create(payload, { userId, entrepriseId }) {
     throw new BadRequestError('Informations client obligatoires manquantes');
   }
 
-  return withTransaction(async (tx) => {
+  // On renvoie l'id depuis la transaction, puis on relit APRÈS le COMMIT :
+  // getById passe par une autre connexion du pool et ne verrait pas une
+  // ligne encore non committée.
+  const newId = await withTransaction(async (tx) => {
     const existing = await tx.query(
       `SELECT id FROM clients WHERE entreprise_id = $1 AND telephone_wa = $2`,
       [entrepriseId, client.telephone_wa],
@@ -106,13 +111,15 @@ export async function create(payload, { userId, entrepriseId }) {
     const contrat = await tx.query(
       `INSERT INTO contrats
          (entreprise_id, client_id, numero_police, type_assurance,
-          date_souscription, date_expiration, montant_prime, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-      [entrepriseId, clientId, numero_police, type_assurance, date_souscription, date_expiration, montant_prime || null, userId],
+          date_souscription, date_expiration, montant_prime, numero_chassis, created_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+      [entrepriseId, clientId, numero_police, type_assurance, date_souscription, date_expiration, montant_prime || null, numero_chassis || null, userId],
     );
 
-    return getById(contrat.rows[0].id, entrepriseId);
+    return contrat.rows[0].id;
   });
+
+  return getById(newId, entrepriseId);
 }
 
 export async function update(id, payload, entrepriseId) {
@@ -120,7 +127,7 @@ export async function update(id, payload, entrepriseId) {
 
   const fields = [];
   const params = [];
-  const allowed = ['type_assurance', 'date_souscription', 'date_expiration', 'montant_prime', 'statut'];
+  const allowed = ['type_assurance', 'date_souscription', 'date_expiration', 'montant_prime', 'numero_chassis', 'statut'];
   for (const key of allowed) {
     if (payload[key] !== undefined) {
       params.push(payload[key]);
@@ -135,6 +142,68 @@ export async function update(id, payload, entrepriseId) {
     params,
   );
   return getById(id, entrepriseId);
+}
+
+/**
+ * Statistiques financières de l'assurance pour une entreprise.
+ * Le chiffre d'affaires = somme des montants payés par les clients
+ * (montant_prime), agrégée par mois de souscription. Sert au point de vue
+ * financier de la patronne : combien l'assurance a généré ce mois, et la
+ * comparaison aux deux mois précédents.
+ */
+export async function statsFinance(entrepriseId) {
+  const agg = await query(
+    `SELECT
+       COALESCE(SUM(montant_prime) FILTER (
+         WHERE date_souscription >= date_trunc('month', CURRENT_DATE)),0) AS ca_mois,
+       COALESCE(SUM(montant_prime) FILTER (
+         WHERE date_souscription >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
+           AND date_souscription <  date_trunc('month', CURRENT_DATE)),0) AS ca_mois_prec,
+       COALESCE(SUM(montant_prime) FILTER (
+         WHERE date_souscription >= date_trunc('month', CURRENT_DATE) - INTERVAL '2 month'
+           AND date_souscription <  date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'),0) AS ca_mois_prec2,
+       COUNT(*) FILTER (WHERE date_souscription >= date_trunc('month', CURRENT_DATE))::int AS nb_mois,
+       COUNT(*) FILTER (
+         WHERE date_souscription >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
+           AND date_souscription <  date_trunc('month', CURRENT_DATE))::int AS nb_mois_prec,
+       COALESCE(SUM(montant_prime),0) AS ca_total,
+       COUNT(*)::int AS nb_total
+     FROM contrats
+     WHERE entreprise_id = $1 AND statut <> 'suspendu'`,
+    [entrepriseId],
+  );
+
+  const serie = await query(
+    `SELECT to_char(m.mois, 'YYYY-MM') AS mois,
+            COALESCE(SUM(c.montant_prime),0) AS ca,
+            COUNT(c.id)::int AS nb
+     FROM generate_series(date_trunc('month', CURRENT_DATE) - INTERVAL '5 month',
+                          date_trunc('month', CURRENT_DATE), INTERVAL '1 month') AS m(mois)
+     LEFT JOIN contrats c
+       ON date_trunc('month', c.date_souscription) = m.mois
+      AND c.entreprise_id = $1 AND c.statut <> 'suspendu'
+     GROUP BY m.mois ORDER BY m.mois`,
+    [entrepriseId],
+  );
+
+  const r = agg.rows[0];
+  const caMois = Number(r.ca_mois);
+  const caPrec = Number(r.ca_mois_prec);
+  const caPrec2 = Number(r.ca_mois_prec2);
+  const variation =
+    caPrec > 0 ? Math.round(((caMois - caPrec) / caPrec) * 100) : caMois > 0 ? 100 : 0;
+
+  return {
+    ca_mois: caMois,
+    ca_mois_prec: caPrec,
+    ca_mois_prec2: caPrec2,
+    nb_mois: r.nb_mois,
+    nb_mois_prec: r.nb_mois_prec,
+    ca_total: Number(r.ca_total),
+    nb_total: r.nb_total,
+    variation_mois: variation,
+    serie: serie.rows.map((s) => ({ mois: s.mois, ca: Number(s.ca), nb: s.nb })),
+  };
 }
 
 /** Désactivation logique : passe le statut à 'suspendu' (pas de suppression). */

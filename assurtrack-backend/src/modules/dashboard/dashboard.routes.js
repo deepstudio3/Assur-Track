@@ -4,6 +4,7 @@ import { authenticate } from '../../middleware/auth.js';
 import { asyncHandler } from '../../utils/asyncHandler.js';
 import * as operations from '../operations/operations.service.js';
 import * as ventes from '../ventes/ventes.service.js';
+import * as contrats from '../contrats/contrats.service.js';
 
 const router = Router();
 
@@ -14,6 +15,15 @@ router.get(
   '/stats-ventes',
   asyncHandler(async (req, res) => {
     const data = await ventes.stats(req.user.entreprise_id);
+    res.json(data);
+  }),
+);
+
+// Stats financières assurance (CA du mois, comparaison, série 6 mois)
+router.get(
+  '/stats-assurance',
+  asyncHandler(async (req, res) => {
+    const data = await contrats.statsFinance(req.user.entreprise_id);
     res.json(data);
   }),
 );

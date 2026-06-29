@@ -122,7 +122,7 @@ export async function create({ lignes, mode_paiement, client, note }, { user }) 
         mode_paiement === 'credit'
           ? TEMPLATES.vente_credit(me.rows[0], total, resume, client, heure)
           : TEMPLATES.vente_comptant(me.rows[0], total, resume, heure);
-      await envoyerMessage(patronne.telephone_wa, msg);
+      await envoyerMessage(patronne.telephone_wa, msg, user.entreprise_id);
     }
   } catch (err) {
     console.error('[ventes] notification échouée :', err.message);
@@ -178,6 +178,7 @@ export async function payer(venteId, { montant, note }, user) {
       await envoyerMessage(
         rows[0].telephone_wa,
         TEMPLATES.dette_payee({ prenom: vente.client_prenom, nom: vente.client_nom }, value, me.rows[0], heure),
+        user.entreprise_id,
       );
     }
   } catch (err) {

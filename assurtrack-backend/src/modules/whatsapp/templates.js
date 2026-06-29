@@ -5,15 +5,19 @@ const fmtDate = (d) =>
 
 const fmtMontant = (n) => `${new Intl.NumberFormat('fr-FR').format(Number(n) || 0)} FCFA`;
 
+/** Ligne d'identification du véhicule (assurance auto) — vide sinon. */
+const ligneChassis = (contrat) =>
+  contrat?.numero_chassis ? `\n🚗 Véhicule — N° de châssis : *${contrat.numero_chassis}*` : '';
+
 export const TEMPLATES = {
   relance_J30: (client, contrat) =>
-    `Bonjour ${client.prenom} 👋\n\nVotre contrat d'assurance *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire dans *30 jours*, le ${fmtDate(contrat.date_expiration)}.\n\nContactez-nous maintenant pour renouveler votre couverture.\n\n_AssurTrack_`,
+    `Bonjour ${client.prenom} 👋\n\nVotre contrat d'assurance *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire dans *30 jours*, le ${fmtDate(contrat.date_expiration)}.${ligneChassis(contrat)}\n\nContactez-nous maintenant pour renouveler votre couverture.\n\n_AssurTrack_`,
 
   relance_J7: (client, contrat) =>
-    `⚠️ Rappel urgent — Bonjour ${client.prenom}\n\nVotre contrat *${contrat.type_assurance}* expire dans *7 jours*.\n\nRenouvelez dès aujourd'hui pour éviter toute interruption de couverture.\n\n_AssurTrack_`,
+    `⚠️ Rappel urgent — Bonjour ${client.prenom}\n\nVotre contrat *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire dans *7 jours*.${ligneChassis(contrat)}\n\nRenouvelez dès aujourd'hui pour éviter toute interruption de couverture.\n\n_AssurTrack_`,
 
   relance_J0: (client, contrat) =>
-    `🔴 *EXPIRATION AUJOURD'HUI*\n\nBonjour ${client.prenom}, votre contrat *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire ce jour.\n\nContactez immédiatement votre agence.\n\n_AssurTrack_`,
+    `🔴 *EXPIRATION AUJOURD'HUI*\n\nBonjour ${client.prenom}, votre contrat *${contrat.type_assurance}* (N° ${contrat.numero_police}) expire ce jour.${ligneChassis(contrat)}\n\nContactez immédiatement votre agence.\n\n_AssurTrack_`,
 
   nouvelle_operation: (secretaire, montant, motif, heure) =>
     `💰 *Nouvelle dette enregistrée*\n\n` +

@@ -9,6 +9,7 @@ import {
   ShoppingCart,
   AlertCircle,
   Package,
+  ShieldCheck,
 } from 'lucide-react';
 import Logo from '../ui/Logo';
 import WhatsAppStatus from '../whatsapp/WhatsAppStatus';
@@ -23,6 +24,7 @@ const NAV = [
   {
     title: 'Assurance',
     items: [
+      { icon: ShieldCheck, label: 'Assurance', path: '/assurance' },
       { icon: RefreshCw, label: 'Relances', path: '/relance' },
       { icon: Users, label: 'Clients', path: '/clients' },
       { icon: Wallet, label: 'Caisse', path: '/caisse', roles: ['patronne', 'secretaire'] },

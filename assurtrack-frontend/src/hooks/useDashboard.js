@@ -14,3 +14,10 @@ export function useVentesStats() {
     queryFn: () => api.get('/dashboard/stats-ventes').then((r) => r.data),
   });
 }
+
+export function useAssuranceStats() {
+  return useQuery({
+    queryKey: ['dashboard', 'stats-assurance'],
+    queryFn: () => api.get('/dashboard/stats-assurance').then((r) => r.data),
+  });
+}

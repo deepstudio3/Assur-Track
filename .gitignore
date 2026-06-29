@@ -22,3 +22,11 @@ Thumbs.db
 
 # Outils locaux
 .claude/
+
+# WhatsFlow — secrets, sessions WhatsApp, logs, caches Python
+whatsflow/api_logs.txt
+whatsflow/client_credentials.json
+whatsflow/**/auth/
+whatsflow/**/auth-test/
+__pycache__/
+*.pyc

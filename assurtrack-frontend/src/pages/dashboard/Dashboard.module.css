@@ -5,6 +5,80 @@
   margin-bottom: var(--space-6);
 }
 
+/* --- Bande revenus assurance --- */
+.revCard {
+  margin-bottom: var(--space-6);
+}
+.revBody {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+.revLead {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.revValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+.revValue {
+  font-family: var(--font-mono);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--gray-900);
+}
+.revTrend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+.revTrend[data-dir='up'] {
+  color: var(--success-500);
+  background: var(--success-100);
+}
+.revTrend[data-dir='down'] {
+  color: var(--danger-500);
+  background: var(--danger-100);
+}
+.revSub {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+.revCompare {
+  display: flex;
+  gap: var(--space-6);
+}
+.revItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.revItemLabel {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+.revItemVal {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--gray-700);
+}
+@media (max-width: 640px) {
+  .revCompare {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
 .horizon {
   margin-bottom: var(--space-6);
 }

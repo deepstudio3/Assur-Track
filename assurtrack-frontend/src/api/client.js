@@ -20,6 +20,9 @@ api.interceptors.response.use(
     const url = err.config?.url || '';
     if (status === 401 && !url.includes('/auth/login')) {
       localStorage.removeItem('assurtrack_token');
+      // Purge aussi l'état d'auth persisté, sinon <Login> nous croit
+      // encore connecté et nous renvoie vers "/" → boucle login/accueil.
+      localStorage.removeItem('assurtrack_auth');
       if (!window.location.pathname.startsWith('/login')) {
         window.location.href = '/login';
       }

@@ -1,0 +1,310 @@
+{
+    "info": {
+        "_postman_id": "whatsflow-openwa-v2",
+        "name": "WhatsFlow - OpenWA Architecture Personnalisee",
+        "description": "Collection Postman pour tester l architecture OpenWA personnalisee avec conteneurs Docker individuels",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "API Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:8001/health",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "health"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Creer un Client",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Test Client OpenWA\",\n    \"email\": \"test@openwa.com\",\n    \"description\": \"Client pour tester le moteur OpenWA personnalise\",\n    \"max_sessions\": 5,\n    \"messages_per_second\": 2\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8001/api/clients/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "clients",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Lister tous les Clients",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8001/api/clients/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "clients",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Creer une Session WhatsApp",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"client_id\": \"{{client_id}}\",\n    \"session_label\": \"test-session-openwa\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8001/api/session/create",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        "create"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Statut de la Session",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8001/api/session/{{session_id}}/status",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        "{{session_id}}",
+                        "status"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Lister toutes les Sessions",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8001/api/session/",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        ""
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Envoyer un Message Texte",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"to\": \"237600000000\",\n    \"message\": \"Bonjour ! Ceci est un test depuis l architecture OpenWA personnalisee\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8001/api/session/{{session_id}}/send-message",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        "{{session_id}}",
+                        "send-message"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Envoyer une Image",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    },
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"to\": \"237600000000\",\n    \"type\": \"image\",\n    \"url\": \"https://picsum.photos/seed/whatsflow/800/600.jpg\",\n    \"caption\": \"Image test depuis WhatsFlow OpenWA\"\n}"
+                },
+                "url": {
+                    "raw": "http://localhost:8001/api/session/{{session_id}}/send-media",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        "{{session_id}}",
+                        "send-media"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "Supprimer une Session",
+            "request": {
+                "method": "DELETE",
+                "header": [
+                    {
+                        "key": "Authorization",
+                        "value": "Bearer {{api_key}}"
+                    }
+                ],
+                "url": {
+                    "raw": "http://localhost:8001/api/session/{{session_id}}",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "8001",
+                    "path": [
+                        "api",
+                        "session",
+                        "{{session_id}}"
+                    ]
+                }
+            },
+            "response": []
+        }
+    ],
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "api_key",
+            "value": "whatsflow_test_api_key_placeholder",
+            "type": "string"
+        },
+        {
+            "key": "client_id",
+            "value": "client_id_placeholder",
+            "type": "string"
+        },
+        {
+            "key": "session_id",
+            "value": "session_id_placeholder",
+            "type": "string"
+        },
+        {
+            "key": "whatsapp_port",
+            "value": "3010",
+            "type": "string"
+        }
+    ]
+}

@@ -84,7 +84,7 @@ export async function createDette({ montant, motif }, { user }) {
     if (patronne) {
       const me = await query(`SELECT prenom, nom FROM users WHERE id = $1`, [user.id]);
       const heure = new Date(inserted.rows[0].created_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' });
-      await envoyerMessage(patronne.telephone_wa, TEMPLATES.nouvelle_operation(me.rows[0], value, motif, heure));
+      await envoyerMessage(patronne.telephone_wa, TEMPLATES.nouvelle_operation(me.rows[0], value, motif, heure), user.entreprise_id);
     }
   } catch (err) {
     console.error('[caisse] notification dette échouée :', err.message);
@@ -138,11 +138,11 @@ export async function rembourser({ secretaireId, montant }, user) {
   try {
     const secU = sec.rows[0];
     if (secU.telephone_wa) {
-      await envoyerMessage(secU.telephone_wa, TEMPLATES.remboursement_secretaire(value, nouveauReste));
+      await envoyerMessage(secU.telephone_wa, TEMPLATES.remboursement_secretaire(value, nouveauReste), user.entreprise_id);
     }
     const patronne = await query(`SELECT telephone_wa FROM users WHERE id = $1`, [user.id]);
     if (patronne.rows[0]?.telephone_wa) {
-      await envoyerMessage(patronne.rows[0].telephone_wa, TEMPLATES.remboursement_patronne(secU, value, nouveauReste));
+      await envoyerMessage(patronne.rows[0].telephone_wa, TEMPLATES.remboursement_patronne(secU, value, nouveauReste), user.entreprise_id);
     }
   } catch (err) {
     console.error('[caisse] notification remboursement échouée :', err.message);

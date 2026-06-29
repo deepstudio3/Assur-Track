@@ -1,0 +1,31 @@
+# Moteur WhatsApp avec vrais QR codes OpenWA
+FROM node:18-alpine
+
+# Installer Chromium pour OpenWA
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Configure Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /app
+
+# Copier package.json
+COPY package.json ./
+
+# Installer les dépendances OpenWA
+RUN npm install
+
+# Copier le code source
+COPY src/ ./src/
+
+EXPOSE 3010
+
+CMD ["node", "src/index.js"]

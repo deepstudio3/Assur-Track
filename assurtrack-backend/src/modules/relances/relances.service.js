@@ -66,6 +66,7 @@ export async function envoyerPourContrat(row, { type } = {}) {
     numero_police: row.numero_police,
     type_assurance: row.type_assurance,
     date_expiration: row.date_expiration,
+    numero_chassis: row.numero_chassis,
   };
   const relanceType = type || typeFromJours(Number(row.jours_restants));
   const message = templateRelance(relanceType, client, contrat);
@@ -79,7 +80,7 @@ export async function envoyerPourContrat(row, { type } = {}) {
   const results = [];
   for (const dest of destinataires) {
     try {
-      await envoyerMessage(dest, message);
+      await envoyerMessage(dest, message, row.entreprise_id);
       await logRelance(row.id, relanceType, dest, message, 'envoye');
       results.push({ destinataire: dest, statut: 'envoye' });
     } catch (err) {

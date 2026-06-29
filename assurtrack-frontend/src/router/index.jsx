@@ -9,8 +9,9 @@ import { RequireAuth, RequireRole } from './guards';
 const Login = lazy(() => import('../pages/auth/Login'));
 const Dashboard = lazy(() => import('../pages/dashboard/Dashboard'));
 const RelanceList = lazy(() => import('../pages/relance/RelanceList'));
-const RelanceForm = lazy(() => import('../pages/relance/RelanceForm'));
 const RelanceCalendar = lazy(() => import('../pages/relance/RelanceCalendar'));
+const AssuranceList = lazy(() => import('../pages/assurance/AssuranceList'));
+const ContratForm = lazy(() => import('../pages/assurance/ContratForm'));
 const Caisse = lazy(() => import('../pages/caisse/Caisse'));
 const OperationForm = lazy(() => import('../pages/caisse/OperationForm'));
 const HistoriqueRemb = lazy(() => import('../pages/caisse/HistoriqueRemb'));
@@ -45,8 +46,12 @@ export default function AppRouter() {
         >
           <Route index element={<Dashboard />} />
 
+          <Route path="assurance" element={<AssuranceList />} />
+          <Route path="assurance/nouveau" element={<ContratForm />} />
+
           <Route path="relance" element={<RelanceList />} />
-          <Route path="relance/nouveau" element={<RelanceForm />} />
+          {/* Création de contrat centralisée sur le module Assurance */}
+          <Route path="relance/nouveau" element={<ContratForm />} />
           <Route path="relance/calendrier" element={<RelanceCalendar />} />
 
           <Route path="clients" element={<ClientsList />} />
