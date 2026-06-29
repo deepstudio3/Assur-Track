@@ -8,11 +8,14 @@ import Badge from '../../components/ui/Badge';
 import EmptyState from '../../components/ui/EmptyState';
 import Loader from '../../components/ui/Loader';
 import { useContrats } from '../../hooks/useContrats';
+import ClientModal from './ClientModal';
 import styles from './ClientsList.module.css';
 
 export default function ClientsList() {
   const [query, setQuery] = useState('');
+  const [selected, setSelected] = useState(null);
   const { data, isLoading } = useContrats({ limit: 200 });
+  const allContrats = data?.data || [];
 
   // Dérive la liste des clients (uniques) à partir des contrats.
   const clients = useMemo(() => {
@@ -87,13 +90,15 @@ export default function ClientsList() {
                   <Mail size={14} /> {c.email || <span className={styles.muted}>—</span>}
                 </li>
               </ul>
-              <button className={styles.cardLink} onClick={() => toast('Fiche client à venir')}>
+              <button className={styles.cardLink} onClick={() => setSelected(c)}>
                 <FileText size={14} /> Voir les contrats
               </button>
             </Card>
           ))}
         </div>
       )}
+
+      <ClientModal client={selected} contrats={allContrats} onClose={() => setSelected(null)} />
     </PageWrapper>
   );
 }
