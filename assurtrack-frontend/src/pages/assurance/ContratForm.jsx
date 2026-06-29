@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, Coins, BellRing } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { ArrowLeft, Save, Coins, BellRing, UploadCloud, FileText, Image as ImageIcon, X } from 'lucide-react';
 import PageWrapper from '../../components/layout/PageWrapper';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
 import { Input, Select } from '../../components/ui/Input';
 import { useCreateContrat } from '../../hooks/useContrats';
+import { useUploadContratDocuments } from '../../hooks/useDocuments';
 import { formatDate } from '../../utils/formatDate';
 import { formatCurrency } from '../../utils/formatCurrency';
 import rel from '../relance/Relance.module.css';
@@ -30,12 +32,23 @@ export default function ContratForm() {
   });
   const isAuto = form.type_assurance === 'Automobile';
   const [confirm, setConfirm] = useState(false);
+  const [files, setFiles] = useState([]);
   const createContrat = useCreateContrat();
+  const upload = useUploadContratDocuments();
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const onPickFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    setFiles((prev) => [...prev, ...picked]);
+    e.target.value = ''; // autorise re-sélection du même fichier
+  };
+  const removeFile = (idx) => setFiles((prev) => prev.filter((_, i) => i !== idx));
+  const fmtSize = (b) =>
+    b < 1024 * 1024 ? `${Math.round(b / 1024)} Ko` : `${(b / 1024 / 1024).toFixed(1)} Mo`;
 
   const onSave = async () => {
     try {
-      await createContrat.mutateAsync({
+      const created = await createContrat.mutateAsync({
         client: {
           nom: form.nom,
           prenom: form.prenom,
@@ -49,6 +62,15 @@ export default function ContratForm() {
         montant_prime: form.montant_prime ? Number(form.montant_prime) : null,
         numero_chassis: isAuto && form.numero_chassis ? form.numero_chassis.trim() : null,
       });
+      // Une fois le contrat créé, on y attache les documents sélectionnés.
+      if (files.length) {
+        try {
+          await upload.mutateAsync({ contratId: created.id, files });
+          toast.success(`${files.length} document(s) ajouté(s)`);
+        } catch {
+          /* toast géré par le hook */
+        }
+      }
       setConfirm(false);
       navigate('/assurance');
     } catch {
@@ -137,6 +159,48 @@ export default function ContratForm() {
               </div>
             </div>
 
+            {/* Documents liés au contrat (images / PDF) */}
+            <div className={styles.docsField}>
+              <p className={rel.legend}>Documents (images / PDF)</p>
+              <label className={styles.dropzone} htmlFor="contrat-docs">
+                <UploadCloud size={20} />
+                <span>Cliquez pour ajouter des fichiers — attestation, carte grise, devis…</span>
+              </label>
+              <input
+                id="contrat-docs"
+                type="file"
+                multiple
+                accept="image/*,application/pdf"
+                style={{ display: 'none' }}
+                onChange={onPickFiles}
+              />
+              <p className={styles.dropzoneHint}>Images (JPG, PNG…) ou PDF · 10 Mo max par fichier</p>
+
+              {files.length > 0 && (
+                <div className={styles.fileList}>
+                  {files.map((f, i) => (
+                    <div className={styles.fileRow} key={`${f.name}-${i}`}>
+                      <span className={styles.fileIcon}>
+                        {f.type === 'application/pdf' ? <FileText size={16} /> : <ImageIcon size={16} />}
+                      </span>
+                      <div className={styles.fileMeta}>
+                        <span className={styles.fileName}>{f.name}</span>
+                        <span className={styles.fileSize}>{fmtSize(f.size)}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${styles.fileBtn} ${styles.fileBtnDanger}`}
+                        onClick={() => removeFile(i)}
+                        aria-label="Retirer"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className={rel.formActions}>
               <Button variant="outline" type="button" onClick={() => navigate('/assurance')}>
                 Annuler
@@ -198,7 +262,7 @@ export default function ContratForm() {
             <Button variant="outline" onClick={() => setConfirm(false)}>
               Modifier
             </Button>
-            <Button icon={Save} loading={createContrat.isPending} onClick={onSave}>
+            <Button icon={Save} loading={createContrat.isPending || upload.isPending} onClick={onSave}>
               Confirmer
             </Button>
           </>

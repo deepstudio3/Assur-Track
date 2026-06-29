@@ -1,11 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { query, withTransaction } from '../../config/database.js';
 import { NotFoundError, BadRequestError } from '../../utils/errors.js';
+import { env } from '../../config/env.js';
 
 const SELECT_BASE = `
   SELECT c.*,
          cl.nom AS client_nom, cl.prenom AS client_prenom,
          cl.telephone_wa AS client_telephone, cl.email AS client_email,
-         (c.date_expiration - CURRENT_DATE) AS jours_restants
+         (c.date_expiration - CURRENT_DATE) AS jours_restants,
+         (SELECT COUNT(*) FROM contrat_documents d WHERE d.contrat_id = c.id)::int AS documents_count
   FROM contrats c
   JOIN clients cl ON cl.id = c.client_id
 `;
@@ -21,6 +25,7 @@ function shape(row) {
     numero_chassis: row.numero_chassis,
     statut: row.statut,
     jours_restants: row.jours_restants,
+    documents_count: row.documents_count ?? 0,
     client: {
       id: row.client_id,
       nom: row.client_nom,
@@ -210,5 +215,77 @@ export async function statsFinance(entrepriseId) {
 export async function deactivate(id, entrepriseId) {
   await getById(id, entrepriseId);
   await query(`UPDATE contrats SET statut = 'suspendu' WHERE id = $1 AND entreprise_id = $2`, [id, entrepriseId]);
+  return { ok: true };
+}
+
+// ===================================================================
+//  Documents liés au contrat (images / PDF)
+// ===================================================================
+
+function shapeDoc(row) {
+  return {
+    id: row.id,
+    nom_original: row.nom_original,
+    mime_type: row.mime_type,
+    taille: row.taille,
+    created_at: row.created_at,
+  };
+}
+
+/** Liste les documents d'un contrat (après contrôle d'appartenance). */
+export async function listDocuments(contratId, entrepriseId) {
+  await getById(contratId, entrepriseId); // 404 si hors entreprise
+  const { rows } = await query(
+    `SELECT * FROM contrat_documents WHERE contrat_id = $1 ORDER BY created_at DESC`,
+    [contratId],
+  );
+  return rows.map(shapeDoc);
+}
+
+/** Enregistre les fichiers téléversés (déjà écrits sur disque par multer). */
+export async function addDocuments(contratId, files, { userId, entrepriseId }) {
+  await getById(contratId, entrepriseId);
+  if (!files?.length) throw new BadRequestError('Aucun fichier reçu');
+
+  for (const f of files) {
+    // multer encode originalname en latin1 → on rétablit l'UTF-8 (accents)
+    const nomOriginal = Buffer.from(f.originalname, 'latin1').toString('utf8');
+    await query(
+      `INSERT INTO contrat_documents
+         (contrat_id, entreprise_id, nom_fichier, nom_original, mime_type, taille, uploaded_by)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [contratId, entrepriseId, f.filename, nomOriginal, f.mimetype, f.size, userId],
+    );
+  }
+  return listDocuments(contratId, entrepriseId);
+}
+
+/** Renvoie le chemin disque + métadonnées d'un document (pour le servir). */
+export async function getDocumentFile(docId, entrepriseId) {
+  const { rows } = await query(
+    `SELECT * FROM contrat_documents WHERE id = $1 AND entreprise_id = $2`,
+    [docId, entrepriseId],
+  );
+  if (!rows[0]) throw new NotFoundError('Document introuvable');
+  return {
+    path: path.join(env.uploadDir, rows[0].nom_fichier),
+    mime_type: rows[0].mime_type,
+    nom_original: rows[0].nom_original,
+  };
+}
+
+/** Supprime un document (ligne + fichier disque). */
+export async function deleteDocument(docId, entrepriseId) {
+  const { rows } = await query(
+    `SELECT nom_fichier FROM contrat_documents WHERE id = $1 AND entreprise_id = $2`,
+    [docId, entrepriseId],
+  );
+  if (!rows[0]) throw new NotFoundError('Document introuvable');
+  await query(`DELETE FROM contrat_documents WHERE id = $1`, [docId]);
+  try {
+    await fs.unlink(path.join(env.uploadDir, rows[0].nom_fichier));
+  } catch {
+    /* fichier déjà absent — on ignore */
+  }
   return { ok: true };
 }

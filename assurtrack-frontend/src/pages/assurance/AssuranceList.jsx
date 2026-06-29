@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, TrendingUp, CalendarRange, FileSignature } from 'lucide-react';
+import { Plus, Search, TrendingUp, CalendarRange, FileSignature, Paperclip } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -20,6 +20,7 @@ import Table from '../../components/ui/Table';
 import EmptyState from '../../components/ui/EmptyState';
 import Loader from '../../components/ui/Loader';
 import EcheanceSparkline from '../../components/signature/EcheanceSparkline';
+import DocumentsModal from './DocumentsModal';
 import { useContrats } from '../../hooks/useContrats';
 import { useAssuranceStats } from '../../hooks/useDashboard';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -36,6 +37,7 @@ const moisLabel = (m) =>
 export default function AssuranceList() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const [docContrat, setDocContrat] = useState(null);
   const { data, isLoading } = useContrats({ limit: 100 });
   const fin = useAssuranceStats();
   const contrats = data?.data || [];
@@ -99,6 +101,25 @@ export default function AssuranceList() {
       header: 'Échéance',
       width: 150,
       render: (c) => <EcheanceSparkline date={c.date_expiration} />,
+    },
+    {
+      key: 'documents',
+      header: 'Docs',
+      align: 'center',
+      render: (c) => (
+        <button
+          type="button"
+          className={`${styles.docBadge} ${c.documents_count ? '' : styles.docBadgeEmpty}`}
+          title="Documents du contrat"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDocContrat(c);
+          }}
+        >
+          <Paperclip size={13} />
+          {c.documents_count || 0}
+        </button>
+      ),
     },
     {
       key: 'statut',
@@ -236,6 +257,8 @@ export default function AssuranceList() {
           </div>
         )}
       </Card>
+
+      <DocumentsModal contrat={docContrat} onClose={() => setDocContrat(null)} />
     </PageWrapper>
   );
 }

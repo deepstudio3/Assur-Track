@@ -34,3 +34,30 @@ export async function remove(req, res) {
   const result = await service.deactivate(req.params.id, req.user.entreprise_id);
   res.json(result);
 }
+
+// --- Documents ---
+
+export async function uploadDocs(req, res) {
+  const docs = await service.addDocuments(req.params.id, req.files, {
+    userId: req.user.id,
+    entrepriseId: req.user.entreprise_id,
+  });
+  res.status(201).json({ data: docs });
+}
+
+export async function listDocs(req, res) {
+  const docs = await service.listDocuments(req.params.id, req.user.entreprise_id);
+  res.json({ data: docs });
+}
+
+export async function viewDoc(req, res) {
+  const file = await service.getDocumentFile(req.params.docId, req.user.entreprise_id);
+  res.setHeader('Content-Type', file.mime_type);
+  res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(file.nom_original)}"`);
+  res.sendFile(file.path);
+}
+
+export async function deleteDoc(req, res) {
+  const result = await service.deleteDocument(req.params.docId, req.user.entreprise_id);
+  res.json(result);
+}

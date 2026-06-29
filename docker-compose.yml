@@ -42,9 +42,12 @@ services:
       WHATSFLOW_URL: http://whatsflow-api:8000
       WHATSFLOW_API_KEY: ${WHATSFLOW_API_KEY:-}
       WHATSFLOW_CLIENT_ID: ${WHATSFLOW_CLIENT_ID:-}
+      UPLOAD_DIR: /app/uploads
     command: sh -c "node src/scripts/migrate.js --seed && node src/server.js"
     ports:
       - "4000:4000"
+    volumes:
+      - assurtrack_uploads:/app/uploads
     networks:
       - assurtrack-net
 
@@ -165,3 +168,4 @@ volumes:
   postgres_data:
   whatsflow_pgdata:
   whatsflow_redis:
+  assurtrack_uploads:
