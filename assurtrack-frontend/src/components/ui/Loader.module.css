@@ -1,0 +1,51 @@
+.ring {
+  display: inline-block;
+  border-radius: var(--radius-full);
+  border: 2.5px solid var(--primary-100);
+  border-top-color: var(--gold-400);
+  animation: loader-spin 0.7s linear infinite;
+}
+
+.center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-12);
+}
+
+.label {
+  font-size: var(--text-sm);
+  color: var(--gray-500);
+}
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.skeleton {
+  display: block;
+  background: linear-gradient(
+    100deg,
+    var(--gray-100) 30%,
+    var(--gray-50) 50%,
+    var(--gray-100) 70%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.3s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

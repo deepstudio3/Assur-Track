@@ -1,0 +1,105 @@
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: var(--z-dropdown);
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface-card);
+  border: var(--border-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-overlay);
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--border-hairline);
+}
+.title {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--primary-900);
+}
+.markAll {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--primary-500);
+}
+.markAll:hover {
+  color: var(--primary-700);
+  text-decoration: underline;
+}
+
+.list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: var(--border-hairline);
+}
+.item:last-child {
+  border-bottom: none;
+}
+.item[data-unread='true'] {
+  background: var(--primary-50);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  color: var(--gray-600);
+}
+.icon[data-type='caisse'] {
+  background: var(--gold-50);
+  color: var(--gold-700);
+}
+.icon[data-type='relance'] {
+  background: var(--primary-100);
+  color: var(--primary-600);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+.itemTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.detail {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+  margin-top: 1px;
+}
+.time {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.unreadDot {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--gold-400);
+}

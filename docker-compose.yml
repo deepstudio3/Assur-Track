@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: assurtrack-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: assurtrack
+      POSTGRES_USER: assurtrack_user
+      POSTGRES_PASSWORD: assurtrack_secret_2026
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U assurtrack_user -d assurtrack"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - assurtrack-net
+
+  backend:
+    build: ./assurtrack-backend
+    container_name: assurtrack-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 4000
+      DATABASE_URL: postgresql://assurtrack_user:assurtrack_secret_2026@postgres:5432/assurtrack
+      JWT_SECRET: assurtrack-jwt-secret-change-in-prod-2026
+      CORS_ORIGIN: http://localhost:5173
+      WHATSFLOW_URL: ${WHATSFLOW_URL:-}
+      WHATSFLOW_TOKEN: whatsflow-internal-2026
+      WHATSFLOW_CLIENT: 852ed5d0-25c6-4f0b-b942-6023a55c5ca4
+    # Applique migrations + seed (idempotent) avant de démarrer l'API.
+    command: sh -c "node src/scripts/migrate.js --seed && node src/server.js"
+    ports:
+      - "4000:4000"
+    networks:
+      - assurtrack-net
+
+  frontend:
+    build:
+      context: ./assurtrack-frontend
+      dockerfile: Dockerfile.dev
+    container_name: assurtrack-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_URL: http://localhost:4000/api
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./assurtrack-frontend/src:/app/src
+    networks:
+      - assurtrack-net
+
+networks:
+  assurtrack-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

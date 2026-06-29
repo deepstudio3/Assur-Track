@@ -1,0 +1,125 @@
+.headTotal {
+  font-size: var(--text-base);
+  color: var(--gray-600);
+}
+.headTotal strong {
+  color: var(--primary-900);
+}
+
+.clients {
+  display: flex;
+  flex-direction: column;
+}
+.client {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  padding: var(--space-4) var(--space-2);
+  text-align: left;
+  border-bottom: var(--border-hairline);
+  transition: background var(--t-fast);
+}
+.client:hover {
+  background: var(--gray-50);
+}
+.clients li:last-child .client {
+  border-bottom: none;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  background: var(--gold-100);
+  color: var(--gold-700);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.clientInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.clientName {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--gray-800);
+}
+.clientMeta {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+.clientTotal {
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--gold-700);
+}
+.chevron {
+  color: var(--gray-300);
+  flex-shrink: 0;
+}
+
+/* --- Modal détail --- */
+.modalTotal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--gold-50);
+  border: 1px solid var(--gold-200);
+  color: var(--gold-700);
+  font-size: var(--text-sm);
+}
+.modalTotal strong {
+  font-size: var(--text-base);
+}
+
+.dettes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.dette {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+.detteInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.detteDate {
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+.detteProduits {
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+}
+.detteMontant {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--primary-900);
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .dette {
+    flex-wrap: wrap;
+  }
+  .detteMontant {
+    margin-left: auto;
+  }
+}

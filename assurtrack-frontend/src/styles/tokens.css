@@ -1,0 +1,132 @@
+/* =====================================================================
+   AssurTrack — Design Tokens
+   Palette, typographie et primitives verrouillées par le brief produit.
+   Toute décision visuelle dérive d'ici. Ne pas inliner de valeurs ailleurs.
+   ===================================================================== */
+
+:root {
+  /* --- Primaire : bleu nuit (confiance, finance, assurance) --- */
+  --primary-900: #0a1628;
+  --primary-800: #0f2044;
+  --primary-700: #162d5e;
+  --primary-600: #1e3a78;
+  --primary-500: #2548a0;
+  --primary-400: #3d64c8;
+  --primary-300: #6b8fe0;
+  --primary-200: #a8c0f0;
+  --primary-100: #d4e2fa;
+  --primary-50: #ebf1fd;
+
+  /* --- Accent : or camerounais (premium, local, chaleur) --- */
+  --gold-900: #3d2500;
+  --gold-700: #7a4a00;
+  --gold-500: #c47a00;
+  --gold-400: #e89a0a;
+  --gold-300: #f5b730;
+  --gold-200: #fad47a;
+  --gold-100: #fdf0c0;
+  --gold-50: #fefae8;
+
+  /* --- Sémantiques --- */
+  --success-500: #1a7a4a;
+  --success-100: #d4f5e5;
+  --danger-500: #a32020;
+  --danger-100: #fae0e0;
+  --warning-500: #8a5200;
+  --warning-100: #fef0cc;
+
+  /* --- Neutres --- */
+  --gray-950: #0c0e12;
+  --gray-900: #14171f;
+  --gray-800: #1e2330;
+  --gray-700: #2c3347;
+  --gray-600: #4a5268;
+  --gray-500: #6b7494;
+  --gray-400: #959db8;
+  --gray-300: #c2c8d8;
+  --gray-200: #dde2ee;
+  --gray-100: #eef1f8;
+  --gray-50: #f7f9fc;
+  --white: #ffffff;
+
+  /* --- Surfaces --- */
+  --surface-bg: #f4f7ff;
+  --surface-card: #ffffff;
+  --surface-sidebar: #0a1628;
+
+  /* --- Typographie --- */
+  --font-display: 'DM Serif Display', Georgia, 'Times New Roman', serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Échelle de type — ratio ~1.2 (mineure tierce), serrée pour interface dense */
+  --text-xs: 0.75rem; /* 12 */
+  --text-sm: 0.8125rem; /* 13 */
+  --text-base: 0.9375rem; /* 15 — corps interface */
+  --text-md: 1rem; /* 16 */
+  --text-lg: 1.125rem; /* 18 */
+  --text-xl: 1.375rem; /* 22 */
+  --text-2xl: 1.75rem; /* 28 */
+  --text-3xl: 2.25rem; /* 36 */
+  --text-4xl: 3rem; /* 48 */
+  --text-5xl: 4rem; /* 64 */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.35;
+  --leading-normal: 1.55;
+
+  /* Suivi (letter-spacing) — eyebrows/labels en capitales espacées */
+  --tracking-label: 0.14em;
+  --tracking-tight: -0.02em;
+
+  /* --- Espacement (base 4px) --- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px; /* padding mini card */
+  --space-8: 32px; /* gap entre sections */
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+
+  /* --- Rayons --- */
+  --radius-sm: 8px; /* inputs */
+  --radius-md: 12px; /* cards */
+  --radius-lg: 16px;
+  --radius-pill: 24px; /* badges */
+  --radius-full: 999px;
+
+  /* --- Bordures --- */
+  --border-hairline: 1px solid var(--gray-100);
+  --border-soft: 1px solid var(--gray-200);
+
+  /* --- Ombres --- */
+  --shadow-card: 0 1px 3px rgba(10, 22, 40, 0.08), 0 4px 16px rgba(10, 22, 40, 0.04);
+  --shadow-raised: 0 4px 12px rgba(10, 22, 40, 0.1), 0 12px 32px rgba(10, 22, 40, 0.08);
+  --shadow-overlay: 0 24px 64px rgba(10, 22, 40, 0.28);
+  --shadow-gold: 0 4px 14px rgba(232, 154, 10, 0.32);
+  --shadow-focus: 0 0 0 3px var(--primary-200);
+
+  /* --- Transitions --- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
+  --t-slow: 360ms;
+
+  /* --- Profondeur (z-index) --- */
+  --z-sidebar: 100;
+  --z-topbar: 90;
+  --z-dropdown: 200;
+  --z-overlay: 1000;
+  --z-modal: 1010;
+  --z-toast: 1100;
+
+  /* --- Disposition --- */
+  --sidebar-w: 264px;
+  --topbar-h: 72px;
+  --content-max: 1280px;
+}

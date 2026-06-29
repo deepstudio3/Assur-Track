@@ -1,0 +1,121 @@
+.screen {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  overflow: hidden;
+  background:
+    radial-gradient(1100px 520px at 50% -10%, rgba(61, 100, 200, 0.25), transparent 60%),
+    linear-gradient(160deg, var(--primary-900), var(--primary-700));
+}
+
+/* Horizon décoratif en bas d'écran */
+.horizonBg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 150px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.tick {
+  position: absolute;
+  bottom: 0;
+  width: 2px;
+  border-radius: var(--radius-full) var(--radius-full) 0 0;
+  background: rgba(255, 255, 255, 0.18);
+}
+.tickGold {
+  background: var(--gold-400);
+  box-shadow: 0 0 18px rgba(232, 154, 10, 0.5);
+}
+
+.card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-10) var(--space-8) var(--space-8);
+  background: var(--surface-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+.tagline {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-style: italic;
+  color: var(--gray-500);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.error {
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-100);
+  color: var(--danger-500);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: var(--border-hairline);
+}
+.demoLabel {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--gray-400);
+}
+.demoRow {
+  display: flex;
+  gap: var(--space-3);
+}
+.demoBtn {
+  padding: 7px 18px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--gray-200);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--primary-700);
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+.demoBtn:hover {
+  border-color: var(--primary-300);
+  background: var(--primary-50);
+}
+.demoHint {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--gray-400);
+}
+
+.footer {
+  position: relative;
+  z-index: 1;
+  font-size: var(--text-xs);
+  color: rgba(255, 255, 255, 0.5);
+}

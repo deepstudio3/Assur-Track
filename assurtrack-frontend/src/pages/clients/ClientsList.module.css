@@ -1,0 +1,99 @@
+.searchBar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 460px;
+  margin-bottom: var(--space-6);
+}
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  color: var(--gray-400);
+  pointer-events: none;
+}
+.searchInput {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px 0 42px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--gray-200);
+  background: var(--surface-card);
+  font-size: var(--text-base);
+  outline: none;
+  box-shadow: var(--shadow-card);
+  transition: border-color var(--t-fast), box-shadow var(--t-base);
+}
+.searchInput:focus {
+  border-color: var(--primary-400);
+  box-shadow: var(--shadow-focus);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-5);
+}
+
+.clientCard {
+  display: flex;
+  flex-direction: column;
+}
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-full);
+  background: var(--primary-900);
+  color: var(--white);
+  font-size: var(--text-base);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.name {
+  font-size: var(--text-lg);
+  color: var(--primary-900);
+  margin-bottom: var(--space-4);
+}
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+}
+.meta li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-sm);
+  color: var(--gray-600);
+}
+.meta svg {
+  color: var(--gray-400);
+  flex-shrink: 0;
+}
+.muted {
+  color: var(--gray-300);
+}
+
+.cardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: auto;
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--primary-600);
+  transition: color var(--t-fast);
+}
+.cardLink:hover {
+  color: var(--primary-800);
+}

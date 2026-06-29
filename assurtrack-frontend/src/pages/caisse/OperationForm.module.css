@@ -1,0 +1,116 @@
+.center {
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* --- Case de certification --- */
+.certify {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-50);
+  border: 1px solid var(--gold-200);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  color: var(--gray-700);
+  line-height: var(--leading-snug);
+}
+.checkbox {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.checkboxBox {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  border: 1.5px solid var(--gold-500);
+  background: var(--surface-card);
+  color: var(--white);
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.checkbox:checked + .checkboxBox {
+  background: var(--gold-400);
+  border-color: var(--gold-400);
+}
+.checkbox:focus-visible + .checkboxBox {
+  box-shadow: var(--shadow-focus);
+}
+
+.note {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-xs);
+  color: var(--gray-500);
+}
+
+/* --- Écran de succès --- */
+.successWrap {
+  display: flex;
+  justify-content: center;
+}
+.success {
+  max-width: 460px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-12) var(--space-8);
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+.successIcon {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border-radius: var(--radius-full);
+  background: var(--success-100);
+  color: var(--success-500);
+  margin-bottom: var(--space-2);
+}
+.successTitle {
+  font-size: var(--text-2xl);
+  color: var(--primary-900);
+}
+.successAmount {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--gold-700);
+}
+.notified {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: var(--space-2);
+  padding: 9px 16px;
+  border-radius: var(--radius-pill);
+  background: var(--success-100);
+  color: var(--success-500);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.successActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  flex-wrap: wrap;
+  justify-content: center;
+}
